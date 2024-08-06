@@ -2,57 +2,10 @@ package main
 
 import (
 	"calculator/utils"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 )
-
-var invalidExpressionError = fmt.Errorf("Invalid expression")
-
-// returns the numbers and operations in the expression
-func format(str string) ([]float64, []string, error) {
-	if len(str) == 0 {
-		return nil, nil, fmt.Errorf("Empty expression")
-	}
-
-	str = strings.ReplaceAll(str, " ", "")
-
-	operations := []string{}
-	nums := []float64{}
-
-	currentNum := ""
-	for _, chr := range str {
-		if chr == '+' || chr == '-' || chr == '*' || chr == '/' {
-			operations = append(operations, string(chr))
-
-			num, err := strconv.ParseFloat(currentNum, 64)
-			if err != nil {
-				return nil, nil, invalidExpressionError
-			}
-			nums = append(nums, num)
-
-			currentNum = ""
-		} else {
-			currentNum += string(chr)
-		}
-	}
-
-	// process last number too
-	num, err := strconv.ParseFloat(currentNum, 64)
-	if err != nil {
-		return nil, nil, invalidExpressionError
-	}
-	nums = append(nums, num)
-
-	// check if there aren't enough operations
-	if len(nums)-1 != len(operations) {
-		return nil, nil, invalidExpressionError
-	}
-
-	return nums, operations, nil
-}
 
 // iterates over the operations and numbers and executes the operations
 func calculate(nums []float64, operations []string) (float64, error) {
@@ -80,92 +33,93 @@ func calculate(nums []float64, operations []string) (float64, error) {
 	return result, nil
 }
 
+func additionHandler(w http.ResponseWriter, r *http.Request) {
+	x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+	y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+	if err1 != nil || err2 != nil {
+		utils.WriteError(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Add(x, y)}
+	utils.WriteJSONResponse(w, result)
+}
+
+func subtractHandler(w http.ResponseWriter, r *http.Request) {
+	x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+	y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+	if err1 != nil || err2 != nil {
+		utils.WriteError(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Subtract(x, y)}
+	utils.WriteJSONResponse(w, result)
+}
+
+func multiplyHandler(w http.ResponseWriter, r *http.Request) {
+	x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+	y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+	if err1 != nil || err2 != nil {
+		utils.WriteError(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Multiply(x, y)}
+	utils.WriteJSONResponse(w, result)
+}
+
+func divideHandler(w http.ResponseWriter, r *http.Request) {
+	x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+	y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+	if err1 != nil || err2 != nil {
+		utils.WriteError(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	res, err := utils.Divide(x, y)
+	if err != nil {
+		utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
+		return
+	}
+
+	result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: res}
+	utils.WriteJSONResponse(w, result)
+}
+
+func calculateHandler(w http.ResponseWriter, r *http.Request) {
+	expression := r.URL.Query().Get("expression")
+	nums, operations, err := utils.Format(expression)
+
+	if err != nil {
+		utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
+		return
+	}
+
+	res, err := calculate(nums, operations)
+	if err != nil {
+		utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
+		return
+	}
+
+	result := utils.Response{Operation: expression, Result: res}
+	utils.WriteJSONResponse(w, result)
+}
+
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello World! Welcome to the GoLang calculator API!")
 	})
 
-	http.HandleFunc("/add", func(w http.ResponseWriter, r *http.Request) {
-		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
-
-		if err1 != nil || err2 != nil {
-			utils.WriteError(w, "Invalid input", http.StatusBadRequest)
-			return
-		}
-
-		result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Add(x, y)}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	http.HandleFunc("/subtract", func(w http.ResponseWriter, r *http.Request) {
-		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
-
-		if err1 != nil || err2 != nil {
-			utils.WriteError(w, "Invalid input", http.StatusBadRequest)
-			return
-		}
-
-		result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Subtract(x, y)}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	http.HandleFunc("/multiply", func(w http.ResponseWriter, r *http.Request) {
-		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
-
-		if err1 != nil || err2 != nil {
-			utils.WriteError(w, "Invalid input", http.StatusBadRequest)
-			return
-		}
-
-		result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: utils.Multiply(x, y)}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	http.HandleFunc("/divide", func(w http.ResponseWriter, r *http.Request) {
-		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
-
-		if err1 != nil || err2 != nil {
-			utils.WriteError(w, "Invalid input", http.StatusBadRequest)
-			return
-		}
-
-		res, err := utils.Divide(x, y)
-		if err != nil {
-			utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
-			return
-		}
-
-		result := utils.Response{Operation: fmt.Sprintf("%f+%f", x, y), Result: res}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-	})
-
-	http.HandleFunc("/calculate", func(w http.ResponseWriter, r *http.Request) {
-		expression := r.URL.Query().Get("expression")
-		nums, operations, err := format(expression)
-
-		if err != nil {
-			utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
-			return
-		}
-
-		res, err := calculate(nums, operations)
-		if err != nil {
-			utils.WriteError(w, fmt.Sprintf("%v", err), http.StatusBadRequest)
-			return
-		}
-
-		result := utils.Response{Operation: expression, Result: res}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(result)
-	})
+	http.HandleFunc("/add", additionHandler)
+	http.HandleFunc("/subtract", subtractHandler)
+	http.HandleFunc("/multiply", multiplyHandler)
+	http.HandleFunc("/divide", divideHandler)
+	http.HandleFunc("/calculate", calculateHandler)
 
 	http.ListenAndServe(":8080", nil)
 }
