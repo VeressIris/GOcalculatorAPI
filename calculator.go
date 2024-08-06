@@ -8,7 +8,7 @@ import (
 )
 
 type Numeric interface {
-	~int | ~float32 | ~float64
+	~int | ~float64
 }
 
 func add[T Numeric](x T, y T) T {
@@ -99,28 +99,51 @@ func main() {
 		fmt.Fprintf(w, "Hello World! Welcome to the GoLang calculator API!")
 	})
 
-	// TODO: Add error handling for each endpoint
 	http.HandleFunc("/add", func(w http.ResponseWriter, r *http.Request) {
-		x, _ := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, _ := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+		if err1 != nil || err2 != nil {
+			http.Error(w, "Error: Invalid input", http.StatusBadRequest)
+			return
+		}
+
 		fmt.Fprintf(w, strconv.FormatFloat(add(x, y), 'f', -1, 64))
 	})
 
 	http.HandleFunc("/subtract", func(w http.ResponseWriter, r *http.Request) {
-		x, _ := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, _ := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+		if err1 != nil || err2 != nil {
+			http.Error(w, "Error: Invalid input", http.StatusBadRequest)
+			return
+		}
+
 		fmt.Fprintf(w, strconv.FormatFloat(subtract(x, y), 'f', -1, 64))
 	})
 
 	http.HandleFunc("/multiply", func(w http.ResponseWriter, r *http.Request) {
-		x, _ := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, _ := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+		if err1 != nil || err2 != nil {
+			http.Error(w, "Error: Invalid input", http.StatusBadRequest)
+			return
+		}
+
 		fmt.Fprintf(w, strconv.FormatFloat(multiply(x, y), 'f', -1, 64))
 	})
 
 	http.HandleFunc("/divide", func(w http.ResponseWriter, r *http.Request) {
-		x, _ := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
-		y, _ := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+		x, err1 := strconv.ParseFloat(r.URL.Query().Get("x"), 64)
+		y, err2 := strconv.ParseFloat(r.URL.Query().Get("y"), 64)
+
+		if err1 != nil || err2 != nil {
+			http.Error(w, "Error: Invalid input", http.StatusBadRequest)
+			return
+		}
+
 		fmt.Fprintf(w, strconv.FormatFloat(divide(x, y), 'f', -1, 64))
 	})
 
