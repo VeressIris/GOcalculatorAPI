@@ -23,8 +23,11 @@ func multiply[T Numeric](x T, y T) T {
 	return x * y
 }
 
-func divide[T Numeric](x T, y T) T {
-	return x / y
+func divide[T Numeric](x T, y T) (T, error) {
+	if y == 0 {
+		return -1, fmt.Errorf("Cannot divide by zero")
+	}
+	return x / y, nil
 }
 
 // returns the numbers and operations in the expression
@@ -73,9 +76,9 @@ func format(str string) ([]float64, []string, error) {
 }
 
 // iterates over the operations and numbers and executes the operations
-func calculate(nums []float64, operations []string) float64 {
+func calculate(nums []float64, operations []string) (float64, error) {
 	if len(nums) == 1 && len(operations) == 0 {
-		return nums[0]
+		return nums[0], nil
 	}
 
 	result := nums[0]
@@ -87,11 +90,15 @@ func calculate(nums []float64, operations []string) float64 {
 		} else if operations[i] == "*" {
 			result = multiply(result, nums[i+1])
 		} else if operations[i] == "/" {
-			result = divide(result, nums[i+1])
+			res, err := divide(result, nums[i+1])
+			if err != nil {
+				return -1, err
+			}
+			result = res
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func main() {
@@ -144,7 +151,13 @@ func main() {
 			return
 		}
 
-		fmt.Fprintf(w, strconv.FormatFloat(divide(x, y), 'f', -1, 64))
+		result, err := divide(x, y)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		fmt.Fprintf(w, strconv.FormatFloat(result, 'f', -1, 64))
 	})
 
 	http.HandleFunc("/calculate", func(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +169,13 @@ func main() {
 			return
 		}
 
-		fmt.Fprintf(w, strconv.FormatFloat(calculate(nums, operations), 'f', -1, 64))
+		result, err := calculate(nums, operations)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Error: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		fmt.Fprintf(w, strconv.FormatFloat(result, 'f', -1, 64))
 	})
 
 	http.ListenAndServe(":8080", nil)
