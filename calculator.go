@@ -9,6 +9,8 @@ import (
 	"strings"
 )
 
+var invalidExpressionError = fmt.Errorf("Invalid expression")
+
 // returns the numbers and operations in the expression
 func format(str string) ([]float64, []string, error) {
 	if len(str) == 0 {
@@ -26,12 +28,11 @@ func format(str string) ([]float64, []string, error) {
 			operations = append(operations, string(chr))
 
 			num, err := strconv.ParseFloat(currentNum, 64)
-
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, invalidExpressionError
 			}
-
 			nums = append(nums, num)
+
 			currentNum = ""
 		} else {
 			currentNum += string(chr)
@@ -39,16 +40,15 @@ func format(str string) ([]float64, []string, error) {
 	}
 
 	// process last number too
-	num, _ := strconv.ParseFloat(currentNum, 64)
+	num, err := strconv.ParseFloat(currentNum, 64)
+	if err != nil {
+		return nil, nil, invalidExpressionError
+	}
 	nums = append(nums, num)
 
-	// check if there is only one number
-	if len(nums) == 1 && len(operations) == 0 {
-		return nums, operations, nil
-	}
 	// check if there aren't enough operations
 	if len(nums)-1 != len(operations) {
-		return nil, nil, fmt.Errorf("Invalid expression")
+		return nil, nil, invalidExpressionError
 	}
 
 	return nums, operations, nil
